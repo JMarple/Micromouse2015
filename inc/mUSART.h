@@ -5,6 +5,7 @@
 #ifndef mUSART_H
 #define mUSART_H
 
+/* mUSARTx - Data about a specific USART port */
 typedef struct
 {
 	volatile char recordedChars[50];
@@ -24,6 +25,7 @@ typedef struct
 	
 } mUSARTx;
 
+/* mUSART - Structure for driving a Serial port */
 typedef struct
 {
 	//All the seperate usart ports
@@ -40,11 +42,12 @@ typedef struct
 	
 }mUSART;
 
+//Global Serial Driver
 mUSART Serial;
 
+void initSerial(USART_TypeDef *num, int baud);
 char pushRecordedCharsOut(void);
 char USART_getchar(void);
-void initSerial(USART_TypeDef *num, int baud);
 void init_USART(mUSARTx *port);
 void send_USART(USART_TypeDef* USARTx, volatile char *s);
 
