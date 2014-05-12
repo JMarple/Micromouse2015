@@ -19,7 +19,7 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
 ###################################################
 
-vpath %.c src
+vpath %.c RobotManager
 vpath %.a lib
 
 ROOT=$(shell pwd)
