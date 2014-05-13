@@ -1,6 +1,6 @@
 # put your *.o targets here, make should handle the rest!
 
-SRCS = main.c system_stm32f4xx.c mUSART.c
+SRCS = main.c config.c system_stm32f4xx.c USART.c
 
 # all the files will be generated with this name (main.elf, main.bin, main.hex, etc)
 
@@ -20,10 +20,12 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ###################################################
 
 vpath %.c RobotManager
+vpath %.c config
 vpath %.a lib
 
 ROOT=$(shell pwd)
 
+CFLAGS += -Iconfig
 CFLAGS += -Iinc -Ilib -Ilib/inc 
 CFLAGS += -Ilib/inc/core -Ilib/inc/peripherals 
 

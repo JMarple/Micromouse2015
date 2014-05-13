@@ -1,20 +1,19 @@
 #include "stm32f4xx_conf.h"
 #include "misc.h"
-#include "RobotManager/mUSART.h"
+#include "config.h"
 
 int main(void)
 {
-     //Setup Serial communication
-	initSerial(USART1, 9600);
-	Serial.send(USART1, "Init Complete! HelloWorld\r\n");
-	
+	//Setup Configuration Files
+	configInit();
+
 	while (1)
 	{
-	 	char getChar = Serial.getChar();
+	  	char getChar = Config.serial.getChar();
 		if(getChar != 0x00)
 		{
-			Serial.send(USART1, &getChar);
-		} 
+			Config.serial.send(&getChar);
+		}   
 	} 
 }
 
