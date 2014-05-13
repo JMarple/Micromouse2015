@@ -1,4 +1,8 @@
 #include "USART.h"
+#include "GPIO.h"
+#include "NVIC.h"
+#include "TIM.h"
+#include "PWM.h"
 
 #ifndef config_h
 #define config_h
@@ -11,8 +15,8 @@
 #define USART_BAUD		9600
 #define USART_HANDLER	USART1_IRQHandler
 
-
-
+//Update Loop
+#define UPDATE_HANDLER	TIM2_IRQHandler	
 
 void configInit(void);
 
@@ -26,5 +30,7 @@ typedef struct
 
 //Global variable holding our system information
 config Config;
+
+void SetupMainLoop(void);
 
 #endif
