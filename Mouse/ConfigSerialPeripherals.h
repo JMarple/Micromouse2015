@@ -8,7 +8,7 @@
 void SerialGPIO();
 void SerialUSART(int Baud);
 void SerialNVIC();
-void SerialDMA(volatile char* bufferAddr);
+void SerialDMA();
 void SerialRCC();
 
 // Holds the DMA information when wanting to send a message

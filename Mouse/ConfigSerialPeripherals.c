@@ -59,13 +59,13 @@ void SerialNVIC()
 	NVIC_Init(&NVIC_Struct);
 }
 
-void SerialDMA(volatile char* bufferAddr)
+void SerialDMA()
 {
 	DMA_DeInit(DMA2_Stream7);
 
 	DMA_Struct.DMA_Channel = DMA_Channel_4;
 	DMA_Struct.DMA_DIR = DMA_DIR_MemoryToPeripheral;
-	DMA_Struct.DMA_Memory0BaseAddr = (uint32_t)bufferAddr;
+	//DMA_Struct.DMA_Memory0BaseAddr = (uint32_t)bufferAddr;
 	DMA_Struct.DMA_PeripheralBaseAddr = (uint32_t)&USART1->DR;
 	//DMA_Struct.DMA_BufferSize = BUFFER_STRING_LENGTH - 1;	
 	DMA_Struct.DMA_PeripheralInc = DMA_PeripheralInc_Disable;

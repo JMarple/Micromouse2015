@@ -5,7 +5,7 @@
 
 // Holds the information that needs to be sent
 #define BUFFER_STRING_LENGTH 	50
-#define BUFFER_SIZE				10
+#define BUFFER_SIZE				100
 #define BUFFER_EMPTY 			-1
 
 // SerialInitiate
@@ -15,4 +15,3 @@ void SerialInitiate(int Baud);
 void send(char* message);
 
 #endif
-

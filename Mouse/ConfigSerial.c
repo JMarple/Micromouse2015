@@ -14,6 +14,7 @@ static void startSerialDMA();
 
 volatile SerialBuffer Buffer[BUFFER_SIZE];
 volatile SerialBuffer* BufferList[BUFFER_SIZE];
+volatile int BufferPosition;
 
 // The main entry point for the Serial initiation
 void SerialInitiate(int Baud)
@@ -21,29 +22,78 @@ void SerialInitiate(int Baud)
 	// Sets all buffers to empty
 	int i;
 	for(i = 0; i < BUFFER_SIZE; i++)	
+	{
+		BufferList[i] = 0;
 		Buffer[i].dataLength = BUFFER_EMPTY;	
+	}
 
-	//copyStringToBuffer(&Buffer[0], "Hello!\n\r");
-	//copyStringToBuffer(&Buffer[1], "Second line is cool\n\r");
-	//copyStringToBuffer(&Buffer[2], "Third line even cooler 8)\n\r");
-	//copyStringToBuffer(&Buffer[3], "Fourth Line w/e\n\r");
+	BufferPosition = -1;
 
 	SerialRCC();
 	SerialGPIO();
 	SerialUSART(Baud);
 	SerialNVIC();
-	SerialDMA(Buffer[0].data);
-
-	//startSerialDMA();
+	SerialDMA();
 
 	send("Hello!\n\r");
 	send("Second Line!:");
 	send("And third!\n\r");
+
+	while(1==1)
+	{
+		send("TestLineA\n\r");
+		send("TestLineB\n\r");
+		send("TestLineC\n\r");
+		send("TestLineD\n\r");
+		int j;
+		for(j = 0; j < 168000; j++);
+	}
 }
 
 void send(char* message)
 {
-	if(Buffer[0].dataLength == BUFFER_EMPTY)
+	// Finds a free buffer to use to store our message
+	int i;
+	for(i = 0; i < BUFFER_SIZE; i++)
+	{
+		if(Buffer[i].dataLength == BUFFER_EMPTY)
+		{
+			copyStringToBuffer(&Buffer[i], message);
+			break;
+		}
+	}
+
+	if(i < BUFFER_SIZE)
+	{
+
+		// If the list is null (no pointers)
+		if(BufferPosition == -1)
+		{
+			BufferPosition++;
+
+			// Assign first pointer to the target buffer
+			BufferList[0] = &Buffer[i];
+			startSerialDMA();
+		}
+		else
+		{			
+			BufferPosition++;
+			BufferList[BufferPosition] = &Buffer[i];
+				/*int j;
+				for(j = 0; j < BUFFER_SIZE; j++)
+				{
+					if(BufferList[j] == 0)
+					{
+						BufferList[j] = &Buffer[i];
+						break;
+					}
+				}*/
+			
+		}
+	}
+	
+
+	/*if(Buffer[0].dataLength == BUFFER_EMPTY)
 	{
 		copyStringToBuffer(&Buffer[0], message);
 		startSerialDMA();
@@ -59,14 +109,15 @@ void send(char* message)
 				break;
 			}
 		}
-	}
+	}*/
 }
 
 static void startSerialDMA()
 {
 	DMA_DeInit(DMA2_Stream7);
 
-	DMA_Struct.DMA_BufferSize = Buffer[0].dataLength;
+	DMA_Struct.DMA_BufferSize = BufferList[0]->dataLength;
+	DMA_Struct.DMA_Memory0BaseAddr = (uint32_t)BufferList[0];
 
 	DMA_Init(DMA2_Stream7, &DMA_Struct);
 
@@ -104,7 +155,44 @@ void DMA2_Stream7_IRQHandler(void)
 	// DMA 2 Stream 7 Completion 
 	if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
 	{		
-		if(Buffer[1].dataLength != BUFFER_EMPTY)
+		if(BufferPosition > 0)
+		{
+			BufferList[0]->dataLength = BUFFER_EMPTY;
+			int i;
+			for(i = 1; i < BUFFER_SIZE; i++)
+			{
+				BufferList[i-1] = BufferList[i];
+			}
+			BufferList[BUFFER_SIZE-1]->dataLength = BUFFER_EMPTY;
+			BufferList[BUFFER_SIZE-1] = 0;
+
+			BufferPosition--;
+			startSerialDMA();
+		}
+		else
+		{
+			BufferList[0]->dataLength = BUFFER_EMPTY;
+			BufferList[0] = 0;
+			BufferPosition = -1;
+		}
+		/*if(BufferList[1] != 0)
+		{
+			BufferList[0]->dataLength = BUFFER_EMPTY;
+
+			int i;
+			for(i = 1; i < BUFFER_SIZE; i++)
+			{
+				BufferList[i-1] = BufferList[i];
+			}
+		}
+		else
+		{
+			BufferList[0]->dataLength = 0;
+			BufferList[0] = 0;
+		}*/
+
+
+		/*if(Buffer[1].dataLength != BUFFER_EMPTY)
 		{
 			// Shifts all data down one row
 			//   ex. Buffer 1 is now Buffer 0, Buffer 2 is now Buffer 1
@@ -125,7 +213,7 @@ void DMA2_Stream7_IRQHandler(void)
 		else
 		{
 			Buffer[0].dataLength = BUFFER_EMPTY;
-		}
+		}*/
 
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
 		DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
