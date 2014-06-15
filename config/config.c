@@ -7,9 +7,9 @@ void configInit(void)
 	
 	initPWM();
 	
-	TIM3->CCR1 = 50;
-	TIM3->CCR2 = 50;
-	TIM3->CCR3 = 50;
-	TIM3->CCR4 = 50;
+	TIM3->CCR1 = 700;
+	TIM3->CCR2 = 700;
+	TIM3->CCR3 = 700;
+	TIM3->CCR4 = 100;
 }
 

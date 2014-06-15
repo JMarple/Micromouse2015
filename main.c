@@ -12,11 +12,20 @@ int main(void)
 	
 	//Turn On LED's on DiscoveryBoard
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);	
-	GPIO_SetupPin(GPIOD, GPIO_Pin_12 | GPIO_Pin_13, GPIO_Mode_OUT);
+	GPIO_SetupPin(GPIOD, 
+				GPIO_Pin_12 | GPIO_Pin_13, 
+				GPIO_Mode_OUT,
+				GPIO_Speed_50MHz,				
+				GPIO_OType_PP,
+				GPIO_PuPd_NOPULL);
+				
 	GPIO_WriteBit(GPIOD, GPIO_Pin_12 | GPIO_Pin_13, Bit_RESET);	
 	
 	while (1)
 	{
+		char text = 'h';
+		
+		Config.serial.send(&text);
 	  	char getChar = Config.serial.getChar();
 		if(getChar != 0x00)
 		{
@@ -38,7 +47,6 @@ void UPDATE_HANDLER()
 }
 
 /*
-
 This will create a 1Khz Update Loop for our robot
 
 */
@@ -48,7 +56,13 @@ void SetupMainLoop(void)
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);	
 	
 	//Set Timer to 1KHz -> 42Mhz/42 = 1Mhz/1000 = 1Khz
-	TIM_SetupTimer(TIM2, 42, 1000);	
+	TIM_SetupTimer(TIM2, 
+					42, 
+					TIM_CounterMode_Up, 
+					1000, 
+					TIM_CKD_DIV1,
+					0x00);	
+					
 	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);	
 	TIM_Cmd(TIM2, ENABLE);	
 

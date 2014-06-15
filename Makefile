@@ -1,6 +1,6 @@
 # put your *.o targets here, make should handle the rest!
 
-SRCS = main.c config.c system_stm32f4xx.c USART.c GPIO.c NVIC.c TIM.c PWM.c
+SRCS = main.c config.c system_stm32f4xx.c USART.c PWM.c Peripherals.c
 
 # all the files will be generated with this name (main.elf, main.bin, main.hex, etc)
 

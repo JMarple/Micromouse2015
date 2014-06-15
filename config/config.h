@@ -1,7 +1,5 @@
 #include "USART.h"
-#include "GPIO.h"
-#include "NVIC.h"
-#include "TIM.h"
+#include "Peripherals.h"
 #include "PWM.h"
 
 #ifndef config_h
