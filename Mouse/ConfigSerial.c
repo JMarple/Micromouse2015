@@ -8,7 +8,7 @@ typedef struct SerialBuffer
 	int dataLength;
 } SerialBuffer;
 
-
+// Copy String To Buffer
 static int copyStringToBuffer(volatile SerialBuffer* Buffer, char* data);
 static void startSerialDMA();
 
