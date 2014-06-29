@@ -15,4 +15,7 @@ void SerialInitiate(int Baud);
 void SerialSendChar(char* message);
 void SerialSendRawInt(int number);
 
+void SerialUpdateEditingBuffer(char* message);
+void SerialSendEditingBuffer();
+
 #endif

@@ -24,6 +24,7 @@ typedef struct
 	//   Note: Requires .beginSerial(#) to be called
 	void (*sendString)(char *s);
 	void (*sendInteger)(int num);
+	void (*sendBufferRemains)();
 
 	void (*beginMotors)();
 } Robot;

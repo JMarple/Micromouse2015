@@ -19,6 +19,8 @@ volatile SerialBuffer Buffer[BUFFER_SIZE];
 volatile SerialBuffer* BufferList[BUFFER_SIZE];
 volatile int BufferPosition;
 
+volatile SerialBuffer* editingBuffer;
+
 // The main entry point for the Serial initiation
 void SerialInitiate(int Baud)
 {
@@ -30,7 +32,8 @@ void SerialInitiate(int Baud)
 		Buffer[i].dataLength = BUFFER_EMPTY;	
 	}
 
-	BufferPosition = -1;
+	BufferPosition = 0;
+	editingBuffer = findFreeBuffer();
 
 	SerialRCC();
 	SerialGPIO();
@@ -61,9 +64,42 @@ void SerialSendRawInt(int number)
 	}
 }
 
-void SerialUpdateBuffer()
+void SerialUpdateEditingBuffer(char* message)
 {
-	
+	while(*message)
+	{
+		if(editingBuffer != 0)
+		{
+			editingBuffer->data[editingBuffer->dataLength] = *message;
+			editingBuffer->dataLength++;
+
+			if(editingBuffer->dataLength >= BUFFER_STRING_LENGTH)
+			{
+				SerialSendEditingBuffer();
+			}
+
+			message++;
+		}
+		// We're losing data at this point because of an overflow
+		else
+		{
+			editingBuffer = findFreeBuffer();
+		}
+	}
+}
+
+void SerialSendEditingBuffer()
+{	
+	BufferList[BufferPosition] = editingBuffer;
+	BufferPosition++;
+
+	if(BufferPosition == 1)
+	{
+		startSerialDMA();
+	}
+
+	// Get new editing buffer
+	editingBuffer = findFreeBuffer();			
 }
 
 static void startSerialDMA()
@@ -108,10 +144,10 @@ static int copyStringToBuffer(volatile SerialBuffer* Buffer, char* data)
 
 static int copyIntegerToBuffer(volatile SerialBuffer* Buffer, int data)
 {
-	int highbyte2 = data >> 24 & 0xFF;
-	int highbyte1 = data >> 16 & 0xFF;
-	int lowbyte1 = data >> 8 & 0xFF;
-	int lowbyte2 = data >> 0 & 0xFF;
+	//int highbyte2 = data >> 24 & 0xFF;
+	//int highbyte1 = data >> 16 & 0xFF;
+	//int lowbyte1 = data >> 8 & 0xFF;
+	//int lowbyte2 = data >> 0 & 0xFF;
 
 	Buffer->data[0] = data >> 24 & 0xFF;
 	Buffer->data[1] = data >> 16 & 0xFF;
@@ -130,6 +166,8 @@ static volatile SerialBuffer* findFreeBuffer()
 	{
 		if(Buffer[i].dataLength == BUFFER_EMPTY)
 		{
+			// Mark is as empty but in use
+			Buffer[i].dataLength = 0;
 			return &Buffer[i];
 		}
 	}
@@ -173,12 +211,16 @@ void DMA2_Stream7_IRQHandler(void)
 	{		
 		if(BufferPosition > 0)
 		{
+			// Open up this buffer for reuse
 			BufferList[0]->dataLength = BUFFER_EMPTY;
+			
+			// Shift buffer pointers
 			int i;
 			for(i = 1; i < BUFFER_SIZE; i++)
 			{
 				BufferList[i-1] = BufferList[i];
 			}
+			
 			BufferList[BUFFER_SIZE-1]->dataLength = BUFFER_EMPTY;
 			BufferList[BUFFER_SIZE-1] = 0;
 
