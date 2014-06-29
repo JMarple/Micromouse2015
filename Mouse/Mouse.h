@@ -22,7 +22,10 @@ typedef struct
 	// send(...)
 	// Sends a string message to the serial port
 	//   Note: Requires .beginSerial(#) to be called
-	void (*send)(char *s);
+	void (*sendString)(char *s);
+	void (*sendInteger)(int num);
+
+	void (*beginMotors)();
 } Robot;
 
 // Our Global Mouse Variable

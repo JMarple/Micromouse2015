@@ -12,6 +12,7 @@
 // This will setup a USART stream on our device
 void SerialInitiate(int Baud);
 
-void send(char* message);
+void SerialSendChar(char* message);
+void SerialSendRawInt(int number);
 
 #endif

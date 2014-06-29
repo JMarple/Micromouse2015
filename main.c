@@ -6,21 +6,19 @@ int main(void)
 	InitRobot();
 
 	// Mouse is our global variable holding lowerlevel calls
-	mouse.beginSerial(921600);
+	mouse.beginSerial(9600);
+	//mouse.beginMotors();
 
-	//mouse.send("AT+UART=115200,1,0");
-
-	//mouse.send("Heartbeat");
-
-	//uint16_t num = 500;
-
-	//USART_SendData(USART1, num);
-	//mouse.send(num);
+	//TIM3->CCR1 = 50;
+	//TIM3->CCR2 = 50;
+	//TIM3->CCR3 = 50;
+	//TIM3->CCR4 = 50;
+	
+	mouse.sendString("Hello World");
 
 	while(1==1)
 	{
-		//mouse.send("1234567");
-		//mouse.send("8910111213");
+		
 	}
 
 	return 0;
