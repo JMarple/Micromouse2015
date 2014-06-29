@@ -61,6 +61,11 @@ void SerialSendRawInt(int number)
 	}
 }
 
+void SerialUpdateBuffer()
+{
+	
+}
+
 static void startSerialDMA()
 {
 
