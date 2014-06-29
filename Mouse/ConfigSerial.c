@@ -9,10 +9,7 @@ typedef struct SerialBuffer
 } SerialBuffer;
 
 // Copy String To Buffer
-static int copyStringToBuffer(volatile SerialBuffer* Buffer, char* data);
-static int copyIntegerToBuffer(volatile SerialBuffer* Buffer, int data);
 static void startSerialDMA();
-static void addBufferToSendingMessages(SerialBuffer* buffer);
 static volatile SerialBuffer* findFreeBuffer();
 
 volatile SerialBuffer Buffer[BUFFER_SIZE];
@@ -42,28 +39,6 @@ void SerialInitiate(int Baud)
 	SerialDMA();
 }
 
-void SerialSendChar(char* message)
-{
-	SerialBuffer* buffer = findFreeBuffer();
-
-	if(buffer != 0)
-	{
-		copyStringToBuffer(buffer, message);
-		addBufferToSendingMessages(buffer);	
-	}
-}
-
-void SerialSendRawInt(int number)
-{
-	SerialBuffer* buffer = findFreeBuffer();
-
-	if(buffer != 0)
-	{
-		copyIntegerToBuffer(buffer, number);
-		addBufferToSendingMessages(buffer);
-	}
-}
-
 void SerialUpdateEditingBuffer(char* message)
 {
 	while(*message)
@@ -76,20 +51,23 @@ void SerialUpdateEditingBuffer(char* message)
 			if(editingBuffer->dataLength >= BUFFER_STRING_LENGTH)
 			{
 				SerialSendEditingBuffer();
-			}
-
-			message++;
+			}			
 		}
 		// We're losing data at this point because of an overflow
 		else
 		{
 			editingBuffer = findFreeBuffer();
 		}
+
+		message++;
 	}
 }
 
 void SerialSendEditingBuffer()
 {	
+	if(editingBuffer == 0)
+		GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);
+
 	BufferList[BufferPosition] = editingBuffer;
 	BufferPosition++;
 
@@ -99,12 +77,11 @@ void SerialSendEditingBuffer()
 	}
 
 	// Get new editing buffer
-	editingBuffer = findFreeBuffer();			
+	editingBuffer = findFreeBuffer();
 }
 
 static void startSerialDMA()
 {
-
 	DMA_DeInit(DMA2_Stream7);
 
 	DMA_Struct.DMA_BufferSize = BufferList[0]->dataLength;
@@ -117,30 +94,63 @@ static void startSerialDMA()
 	DMA_Cmd(DMA2_Stream7, ENABLE); 
 }
 
-int count = 0;
-
-static int copyStringToBuffer(volatile SerialBuffer* Buffer, char* data)
+static volatile SerialBuffer* findFreeBuffer()
 {
-	// Defualt all characters to zero
 	int i;
-	for(i = 0; i < BUFFER_STRING_LENGTH; i++)
-		Buffer->data[i] = 0;
-
-	// Until we get a null pointer, assign our characters
-	i = 0;
-	while(*data)
+	for(i = 0; i < BUFFER_SIZE; i++)
 	{
-		Buffer->data[i] = *data;
-		i++;
-		data++;
+		if(Buffer[i].dataLength == BUFFER_EMPTY)
+		{
+			// Mark as empty but in use
+			Buffer[i].dataLength = 0;
+			return &Buffer[i];
+		}
 	}
 
-	// Assign the length of the string so 
-	//   the DMA knows how many bytes to go through
-	Buffer->dataLength = i;
-
-	return i;
+	return 0;
 }
+
+// DMA Completion Interrupt
+// This is called when the DMA has completed transmitting it's current message 
+void DMA2_Stream7_IRQHandler(void)
+{
+	// DMA 2 Stream 7 Completion 
+	if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
+	{		
+		if(BufferPosition > 1)
+		{
+			// Open up this buffer for reuse
+			BufferList[0]->dataLength = BUFFER_EMPTY;
+			
+			// Shift buffer pointers
+			int i;
+			for(i = 1; i < BUFFER_SIZE; i++)
+			{
+				BufferList[i-1] = BufferList[i];
+			}
+
+			BufferList[BUFFER_SIZE-1] = 0;
+
+			BufferPosition--;
+			startSerialDMA();
+		}
+		else
+		{
+			BufferList[0]->dataLength = BUFFER_EMPTY;
+			BufferList[0] = 0;
+			BufferPosition = 0;
+		}
+
+		/* Clear DMA Stream Transfer Complete interrupt pending bit */
+		DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
+	}
+}
+
+
+
+
+
+
 
 static int copyIntegerToBuffer(volatile SerialBuffer* Buffer, int data)
 {
@@ -157,86 +167,6 @@ static int copyIntegerToBuffer(volatile SerialBuffer* Buffer, int data)
 	Buffer->dataLength = 4;
 
 	return 4;
-}
-
-static volatile SerialBuffer* findFreeBuffer()
-{
-	int i;
-	for(i = 0; i < BUFFER_SIZE; i++)
-	{
-		if(Buffer[i].dataLength == BUFFER_EMPTY)
-		{
-			// Mark is as empty but in use
-			Buffer[i].dataLength = 0;
-			return &Buffer[i];
-		}
-	}
-
-	return 0;
-}
-
-static void addBufferToSendingMessages(SerialBuffer* buffer)
-{
-	// If that buffer exists
-	if(buffer != 0)
-	{
-		// If the list is null (no pointers)
-		if(BufferPosition == -1)
-		{
-			// Increment our positioner to 0
-			BufferPosition++;
-
-			// Assign first pointer to the target buffer
-			BufferList[0] = buffer;
-
-			// Start Transmission
-			startSerialDMA();
-		}
-		else
-		{		
-			// Since we have multiple messages in the queue, 
-			//   increment our counter and link the buffer
-			BufferPosition++;
-			BufferList[BufferPosition] = buffer;			
-		}
-	}
-}
-
-// DMA Completion Interrupt
-// This is called when the DMA has completed transmitting it's current message 
-void DMA2_Stream7_IRQHandler(void)
-{
-	// DMA 2 Stream 7 Completion 
-	if (DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7))
-	{		
-		if(BufferPosition > 0)
-		{
-			// Open up this buffer for reuse
-			BufferList[0]->dataLength = BUFFER_EMPTY;
-			
-			// Shift buffer pointers
-			int i;
-			for(i = 1; i < BUFFER_SIZE; i++)
-			{
-				BufferList[i-1] = BufferList[i];
-			}
-			
-			BufferList[BUFFER_SIZE-1]->dataLength = BUFFER_EMPTY;
-			BufferList[BUFFER_SIZE-1] = 0;
-
-			BufferPosition--;
-			startSerialDMA();
-		}
-		else
-		{
-			BufferList[0]->dataLength = BUFFER_EMPTY;
-			BufferList[0] = 0;
-			BufferPosition = -1;
-		}
-
-		/* Clear DMA Stream Transfer Complete interrupt pending bit */
-		DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
-	}
 }
 
 void USART1_IRQHandler(void)
