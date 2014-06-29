@@ -7,7 +7,7 @@ void InitRobot()
 {
 	mouse.beginSerial 	= &SerialInitiate;
 	mouse.sendString	= &SerialUpdateEditingBuffer;
-	//mouse.sendInteger	= &SerialSendRawInt;
+	mouse.sendInteger	= &SerialSendRawInteger;
 	mouse.sendBufferRemains = &SerialSendEditingBuffer;
 
 	mouse.beginMotors 	= &InitMotors;

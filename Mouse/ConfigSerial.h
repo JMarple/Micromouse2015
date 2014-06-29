@@ -12,10 +12,8 @@
 // This will setup a USART stream on our device
 void SerialInitiate(int Baud);
 
-void SerialSendChar(char* message);
-void SerialSendRawInt(int number);
-
 void SerialUpdateEditingBuffer(char* message);
+void SerialSendRawInteger(int data);
 void SerialSendEditingBuffer();
 
 #endif

@@ -14,7 +14,7 @@ int main(void)
 	//TIM3->CCR3 = 50;
 	//TIM3->CCR4 = 50;
 	
-	mouse.sendString("Hello World");
+	/*mouse.sendString("Hello World");
 	mouse.sendString("Testing This");
 	mouse.sendString("Still Sending");
 	mouse.sendString("Why Hello There!");
@@ -28,7 +28,9 @@ int main(void)
 	for(i = 0; i < 50; i++)
 	{
 		mouse.sendString("1234");
-	}
+	}*/
+
+	mouse.sendInteger(0);
 
 	GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);
 

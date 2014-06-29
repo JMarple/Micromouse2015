@@ -65,9 +65,6 @@ void SerialUpdateEditingBuffer(char* message)
 
 void SerialSendEditingBuffer()
 {	
-	if(editingBuffer == 0)
-		GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);
-
 	BufferList[BufferPosition] = editingBuffer;
 	BufferPosition++;
 
@@ -78,6 +75,33 @@ void SerialSendEditingBuffer()
 
 	// Get new editing buffer
 	editingBuffer = findFreeBuffer();
+}
+
+void SerialSendRawInteger(int data)
+{
+	if(editingBuffer != 0)
+	{
+		int sentFlag = 0;
+
+		int i;
+		for(i = sizeof(data)-1; i >= 0; i--)
+		{
+			char num = (data >> (i*8) ) & 0xFF;
+
+			if( (num != 0 || sentFlag) 
+				|| (i == 0))
+			{
+				sentFlag = 1;
+				editingBuffer->data[editingBuffer->dataLength] = num;
+				editingBuffer->dataLength++;
+
+				if(editingBuffer->dataLength >= BUFFER_STRING_LENGTH)
+				{
+					SerialSendEditingBuffer();
+				}
+			}
+		}
+	}
 }
 
 static void startSerialDMA()
@@ -144,29 +168,6 @@ void DMA2_Stream7_IRQHandler(void)
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
 		DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
 	}
-}
-
-
-
-
-
-
-
-static int copyIntegerToBuffer(volatile SerialBuffer* Buffer, int data)
-{
-	//int highbyte2 = data >> 24 & 0xFF;
-	//int highbyte1 = data >> 16 & 0xFF;
-	//int lowbyte1 = data >> 8 & 0xFF;
-	//int lowbyte2 = data >> 0 & 0xFF;
-
-	Buffer->data[0] = data >> 24 & 0xFF;
-	Buffer->data[1] = data >> 16 & 0xFF;
-	Buffer->data[2] = data >> 8 & 0xFF;
-	Buffer->data[3] = data >> 0 & 0xFF;
-
-	Buffer->dataLength = 4;
-
-	return 4;
 }
 
 void USART1_IRQHandler(void)
