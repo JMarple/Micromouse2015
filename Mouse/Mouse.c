@@ -5,12 +5,18 @@
 
 void InitRobot()
 {
+	// Initialization
 	mouse.beginSerial 	= &SerialInitiate;
-	mouse.sendString	= &SerialUpdateEditingBuffer;
-	mouse.sendInteger	= &SerialSendRawInteger;
-	mouse.sendBufferRemains = &SerialSendEditingBuffer;
-
 	mouse.beginMotors 	= &InitMotors;
+
+	// Serial Communication Controls
+	mouse.sendNum		= &SerialSaveNumber;
+	mouse.sendChar		= &SerialSaveRawChar;
+	mouse.sendString	= &SerialSaveString;
+	mouse.sendInteger	= &SerialSaveRawInteger;
+	mouse.forceBuffer 	= &SerialForceBuffer;
+
+	
 }
 
 

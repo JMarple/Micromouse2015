@@ -23,8 +23,10 @@ typedef struct
 	// Sends a string message to the serial port
 	//   Note: Requires .beginSerial(#) to be called
 	void (*sendString)(char *s);
+	void (*sendChar)(char num);
+	void (*sendNum)(long data);
 	void (*sendInteger)(int num);
-	void (*sendBufferRemains)();
+	void (*forceBuffer)();
 
 	void (*beginMotors)();
 } Robot;

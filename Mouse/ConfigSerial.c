@@ -1,22 +1,55 @@
 #include "ConfigSerial.h"
 #include "ConfigSerialPeripherals.h"
 
+// Important functions:
+//  SerialSaveRawChar -> Updates the buffer pointed by editingBuffer
+//                         and updates DMA on overflows
+//  startSerialDMA    -> Starts the DMA with the info at BufferList[0]->data
+//  DMA2_Stream7_IRQHandler -> is called when DMA has finished a buffer and 
+//                                needs a new one!
+// Notes:
+//   Buffer is all the information in no particular order
+//     (findFreeBuffer will find a new buffer at random)
+//
+//   BufferList points to a certain buffer location
+//     this will be used by startSerialDMA, [0] is the next 
+//     position to be sent by USART, next beeing 1, then 2, etc.
+//
+//   editingBuffer points to a buffer that SerialSaveRawChar
+//     will update.  When the buffer from editingBuffer is full,
+//     it will save that pointer to BufferList, then find a new
+//     buffer with findFreeBuffer
+
+// Stores each buffer of bytes that will be
+//   references to by the DMA (see startSerialDMA())
 typedef struct SerialBuffer
 {
+	// The bytes that 
 	char data[BUFFER_STRING_LENGTH];
 
+	// The number of bytes written to data[]
 	int dataLength;
+
 } SerialBuffer;
 
-// Copy String To Buffer
+// Starts the DMA
 static void startSerialDMA();
+
+// Returns a pointer to a new buffer
 static volatile SerialBuffer* findFreeBuffer();
 
+// Holds the data to be sent in no particular order
 volatile SerialBuffer Buffer[BUFFER_SIZE];
+
+// Tells us the order to send the data, 0 being first
 volatile SerialBuffer* BufferList[BUFFER_SIZE];
+
+// The position in the editingBuffer;
 volatile int BufferPosition;
 
+// The buffer currently being added to
 volatile SerialBuffer* editingBuffer;
+
 
 // The main entry point for the Serial initiation
 void SerialInitiate(int Baud)
@@ -39,31 +72,70 @@ void SerialInitiate(int Baud)
 	SerialDMA();
 }
 
-void SerialUpdateEditingBuffer(char* message)
+// Save a string to editingBuffer
+void SerialSaveString(char* message)
 {
 	while(*message)
 	{
-		if(editingBuffer != 0)
-		{
-			editingBuffer->data[editingBuffer->dataLength] = *message;
-			editingBuffer->dataLength++;
-
-			if(editingBuffer->dataLength >= BUFFER_STRING_LENGTH)
-			{
-				SerialSendEditingBuffer();
-			}			
-		}
-		// We're losing data at this point because of an overflow
-		else
-		{
-			editingBuffer = findFreeBuffer();
-		}
-
+		SerialSaveRawChar(*message);
 		message++;
 	}
 }
 
-void SerialSendEditingBuffer()
+// Save a char to editingBuffer
+void SerialSaveRawChar(char num)
+{
+	if(editingBuffer != 0)
+	{
+		editingBuffer->data[editingBuffer->dataLength] = num;
+		editingBuffer->dataLength++;
+
+		if(editingBuffer->dataLength >= BUFFER_STRING_LENGTH)
+		{
+			SerialForceBuffer();
+		}
+	}
+	else
+	{
+		editingBuffer = findFreeBuffer();
+	}
+}
+
+// Save an arbitrary number to editingBuffer
+// This will only show important bytes! 
+// ie, 5 (0101), will be sent as 00000101
+// instead of 00000000 00000000 00000000 00000101
+void SerialSaveNumber(long data)
+{
+	int sentFlag = 0;
+
+	int i;
+	for(i = sizeof(data)-1; i >= 0; i--)
+	{
+		char num = (data >> (i*8) ) & 0xFF;
+
+		if( (num != 0 || sentFlag) 
+			|| (i == 0))
+		{
+			sentFlag = 1;
+			SerialSaveRawChar(num);
+		}
+	}	
+}
+
+// Saves 4 bytes to editingBuffer
+void SerialSaveRawInteger(int data)
+{	
+	int i;
+	for(i = 3; i >= 0; i--)
+	{
+		SerialSaveRawChar((data >> (i*8) ) & 0xFF);			
+	}
+}
+
+// Forces the buffer to send anything in the buffer
+//  even if the buffer isn't full!
+void SerialForceBuffer()
 {	
 	BufferList[BufferPosition] = editingBuffer;
 	BufferPosition++;
@@ -77,33 +149,7 @@ void SerialSendEditingBuffer()
 	editingBuffer = findFreeBuffer();
 }
 
-void SerialSendRawInteger(int data)
-{
-	if(editingBuffer != 0)
-	{
-		int sentFlag = 0;
-
-		int i;
-		for(i = sizeof(data)-1; i >= 0; i--)
-		{
-			char num = (data >> (i*8) ) & 0xFF;
-
-			if( (num != 0 || sentFlag) 
-				|| (i == 0))
-			{
-				sentFlag = 1;
-				editingBuffer->data[editingBuffer->dataLength] = num;
-				editingBuffer->dataLength++;
-
-				if(editingBuffer->dataLength >= BUFFER_STRING_LENGTH)
-				{
-					SerialSendEditingBuffer();
-				}
-			}
-		}
-	}
-}
-
+// Starts the DMA process on our processor
 static void startSerialDMA()
 {
 	DMA_DeInit(DMA2_Stream7);
@@ -118,6 +164,8 @@ static void startSerialDMA()
 	DMA_Cmd(DMA2_Stream7, ENABLE); 
 }
 
+// Finds the next buffer not being used
+//   it looks for dataLength to equal BUFFER_EMPTY
 static volatile SerialBuffer* findFreeBuffer()
 {
 	int i;
@@ -170,6 +218,7 @@ void DMA2_Stream7_IRQHandler(void)
 	}
 }
 
+// Receving function (not used atm)
 void USART1_IRQHandler(void)
 {
 	if( USART_GetITStatus(USART1, USART_IT_RXNE) )
