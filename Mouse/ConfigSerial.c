@@ -65,6 +65,7 @@ void SerialInitiate(int Baud)
 	BufferPosition = 0;
 	editingBuffer = findFreeBuffer();
 
+	// Basic Initiation
 	SerialRCC();
 	SerialGPIO();
 	SerialUSART(Baud);
@@ -90,6 +91,7 @@ void SerialSaveRawChar(char num)
 		editingBuffer->data[editingBuffer->dataLength] = num;
 		editingBuffer->dataLength++;
 
+		// Checks if the buffer is full
 		if(editingBuffer->dataLength >= BUFFER_STRING_LENGTH)
 		{
 			SerialForceBuffer();
@@ -112,8 +114,12 @@ void SerialSaveNumber(long data)
 	int i;
 	for(i = sizeof(data)-1; i >= 0; i--)
 	{
+		// Get the byte i of the data
 		char num = (data >> (i*8) ) & 0xFF;
 
+		// If number isn't 0, 
+		//  or we've saved some data before, 
+		//  or we're on the last byte
 		if( (num != 0 || sentFlag) 
 			|| (i == 0))
 		{
@@ -154,7 +160,10 @@ static void startSerialDMA()
 {
 	DMA_DeInit(DMA2_Stream7);
 
+	// Only transwer the number of bytes listed by dataLength
 	DMA_Struct.DMA_BufferSize = BufferList[0]->dataLength;
+
+	// Set the pointer to the buffer to BufferList[0]
 	DMA_Struct.DMA_Memory0BaseAddr = (uint32_t)BufferList[0];
 
 	DMA_Init(DMA2_Stream7, &DMA_Struct);
@@ -194,26 +203,31 @@ void DMA2_Stream7_IRQHandler(void)
 			// Open up this buffer for reuse
 			BufferList[0]->dataLength = BUFFER_EMPTY;
 			
-			// Shift buffer pointers
+			// Shift buffer pointers so that [1] is now [0]
 			int i;
 			for(i = 1; i < BUFFER_SIZE; i++)
 			{
 				BufferList[i-1] = BufferList[i];
 			}
 
+			// Set the last buffer to be null since it's new
 			BufferList[BUFFER_SIZE-1] = 0;
 
+			// Decrement the position as one position was just erased
 			BufferPosition--;
+
+			// Start a new DMA stream with the new buffer (BufferList[0])
 			startSerialDMA();
 		}
 		else
 		{
+			// Since there are no more buffers to send, set BufferList[0] to null
 			BufferList[0]->dataLength = BUFFER_EMPTY;
 			BufferList[0] = 0;
 			BufferPosition = 0;
 		}
 
-		/* Clear DMA Stream Transfer Complete interrupt pending bit */
+		// Clear DMA Stream Transfer Complete interrupt pending bit 
 		DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
 	}
 }
@@ -224,22 +238,6 @@ void USART1_IRQHandler(void)
 	if( USART_GetITStatus(USART1, USART_IT_RXNE) )
 	{
 		//t = USART1->DR;
-		//SerialSend(&t);
-
-		/*static uint8_t cnt = 0;
-		char t = USART1->DR;
-
-		if( (t != '\n') && (cnt < 20) )
-		{
-			receivedString[cnt] = t;
-			cnt++;
-		}
-		else
-		{
-			cnt = 0;
-			GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);
-			SerialSend(receivedString);
-		}*/
 	}
 }
 
