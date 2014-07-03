@@ -5,7 +5,7 @@ int main(void)
 {
 	InitRobot();
 
-	// Mouse is our global variable holding lowerlevel calls
+	mouse.beginSensors();
 	mouse.beginSerial(9600);
 
 	int num = 256;
@@ -15,9 +15,15 @@ int main(void)
 	mouse.sendNum(0xFFFF);
 	mouse.sendChar('a');
 
-	mouse.forceBuffer();			
+	mouse.forceBuffer();		
 
-	while(1==1);
+  	
+
+	while(1==1)
+	{
+		//int timerValue = TIM_GetCounter(TIM2);
+
+	}
 
 	return 0;
 }

@@ -29,6 +29,8 @@ typedef struct
 	void (*forceBuffer)();
 
 	void (*beginMotors)();
+
+	void (*beginSensors)();
 } Robot;
 
 // Our Global Mouse Variable

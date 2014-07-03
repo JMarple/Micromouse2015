@@ -3,6 +3,7 @@
 
 // ConfigSerial.h
 // Author: Justin Marple (jmarple@umass.edu)
+// Date: 6/30/14
 //
 // This file implements several functions for serial
 //   communication with the STM32F4 processor

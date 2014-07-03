@@ -13,13 +13,6 @@ void SerialGPIO()
 	GPIO_Struct.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOA, &GPIO_Struct);
 
-	GPIO_Struct.GPIO_Pin = GPIO_Pin_8;
-	GPIO_Struct.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_Struct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_Init(GPIOA, &GPIO_Struct);
-
-	GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
-
 	// Setups Alternative Function
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);
 	GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);
@@ -86,6 +79,5 @@ void SerialRCC()
 {
 	// Turns on Peripheral Clocks for GPIO and USART functions
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);	
   	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
 }
