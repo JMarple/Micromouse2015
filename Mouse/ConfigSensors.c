@@ -4,11 +4,13 @@ static void SensorTIM();
 static void SensorRCC();
 static void SensorGPIO();
 static void SensorNVIC();
+static void SensorADC();
 
 void SensorInit()
 {
 	SensorRCC();
 	SensorGPIO();
+	SensorADC();
 	SensorTIM();
 	SensorNVIC();
 }
@@ -21,7 +23,7 @@ static void SensorTIM()
 
 	TIM_Struct.TIM_Prescaler = 84 - 1;
 	TIM_Struct.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_Struct.TIM_Period = 1000 - 1; // Auto reload value
+	TIM_Struct.TIM_Period = 200 - 1; // Auto reload value
 	TIM_Struct.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_Struct.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM2, &TIM_Struct);
@@ -47,6 +49,8 @@ static void SensorRCC()
 {
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 }
 
 static void SensorGPIO()
@@ -61,6 +65,32 @@ static void SensorGPIO()
 	GPIO_Init(GPIOA, &GPIO_Struct);
 
 	GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
+
+	GPIO_Struct.GPIO_Pin = GPIO_Pin_0;
+	GPIO_Struct.GPIO_Mode = GPIO_Mode_AN;
+	GPIO_Struct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOC, &GPIO_Struct);
+}
+
+static void SensorADC()
+{
+	ADC_InitTypeDef ADC_Struct;
+	//ADC_CommonInitTypeDef ADC_Common;
+
+	ADC_DeInit();
+
+	ADC_Struct.ADC_DataAlign = ADC_DataAlign_Right;
+	ADC_Struct.ADC_Resolution = ADC_Resolution_12b;
+	ADC_Struct.ADC_ContinuousConvMode = ENABLE;
+	ADC_Struct.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
+	ADC_Struct.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+	ADC_Struct.ADC_NbrOfConversion = 1;
+	ADC_Struct.ADC_ScanConvMode = DISABLE;
+	ADC_Init(ADC1, &ADC_Struct);
+
+	ADC_Cmd(ADC1, ENABLE);
+
+	ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_144Cycles);
 }
 
 static void SensorNVIC()
