@@ -6,8 +6,14 @@ static void SensorGPIO();
 static void SensorNVIC();
 static void SensorADC();
 
+volatile int Sensors[5];
+
 void SensorInit()
 {
+	int i;
+	for(i = 0; i < 5; i++)
+		Sensors[i] = 0;
+
 	SensorRCC();
 	SensorGPIO();
 	SensorADC();
@@ -15,11 +21,15 @@ void SensorInit()
 	SensorNVIC();
 }
 
-TIM_TimeBaseInitTypeDef TIM_Struct;
-TIM_OCInitTypeDef TIM_OC;
+int SensorGetValue(int sensor)
+{
+	return Sensors[sensor];
+}
 
 static void SensorTIM()
 {
+	TIM_TimeBaseInitTypeDef TIM_Struct;
+	TIM_OCInitTypeDef TIM_OC;
 
 	TIM_Struct.TIM_Prescaler = 84 - 1;
 	TIM_Struct.TIM_CounterMode = TIM_CounterMode_Up;
@@ -66,7 +76,7 @@ static void SensorGPIO()
 
 	GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
 
-	GPIO_Struct.GPIO_Pin = GPIO_Pin_0;
+	GPIO_Struct.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
 	GPIO_Struct.GPIO_Mode = GPIO_Mode_AN;
 	GPIO_Struct.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &GPIO_Struct);
@@ -90,7 +100,7 @@ static void SensorADC()
 
 	ADC_Cmd(ADC1, ENABLE);
 
-	ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_144Cycles);
+	
 }
 
 static void SensorNVIC()
@@ -108,37 +118,47 @@ static void SensorNVIC()
 	ADC_ITConfig(ADC1, ADC_IT_EOC, ENABLE);
 }
 
-volatile int counter = 100;
+volatile int counter = 0;
 
 void TIM2_IRQHandler()
 {
 	if(TIM_GetITStatus(TIM2, TIM_IT_CC1) != RESET)
 	{
 		TIM_ClearITPendingBit(TIM2, TIM_IT_CC1);
+		//TIM_PrescalerConfig(TIM2, counter, TIM_PSCReloadMode_Immediate);
 
-
-
-		/*TIM_PrescalerConfig(TIM2, counter, TIM_PSCReloadMode_Immediate);
-
-		counter++;
-		if(counter > 500)
-			counter = 100;*/
-
-		//GPIO_ToggleBits(GPIOA, GPIO_Pin_8);
 		GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);	
 	}
+
 	else if(TIM_GetITStatus(TIM2, TIM_IT_CC2) != RESET)
 	{
 		TIM_ClearITPendingBit(TIM2, TIM_IT_CC2);
 
+		if(counter == 0)
+		{
+			counter++;
+			ADC_RegularChannelConfig(ADC1, ADC_Channel_11, 1, ADC_SampleTime_480Cycles);
+		}
+		else
+		{
+			counter = 0;
+			ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_480Cycles);
+		}
+		
 		ADC_SoftwareStartConv(ADC1);
 	}
 }
 
 void ADC_IRQHandler()
 {
-	ADC_ClearITPendingBit(ADC1, ADC_IT_EOC);
-	GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
+	if(ADC_GetITStatus(ADC1, ADC_IT_EOC) != RESET)
+	{
+		ADC_ClearITPendingBit(ADC1, ADC_IT_EOC);
+		
+		Sensors[0] = ADC_GetConversionValue(ADC1);
+
+		GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
+	}
 
 	//mouse.sendString("ADC");
 	//int num = ADC_GetConversionValue(ADC1);

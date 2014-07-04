@@ -10,7 +10,7 @@ void InitRobot()
 	mouse.beginSerial 	= &SerialInitiate;
 	mouse.beginMotors 	= &InitMotors;
 	mouse.beginSensors 	= &SensorInit;
-	
+
 	// Serial Communication Controls
 	mouse.sendNum		= &SerialSaveNumber;
 	mouse.sendChar		= &SerialSaveRawChar;
@@ -18,7 +18,7 @@ void InitRobot()
 	mouse.sendInteger	= &SerialSaveRawInteger;
 	mouse.forceBuffer 	= &SerialForceBuffer;
 
-	
+	mouse.getSensor		= &SensorGetValue;	
 }
 
 

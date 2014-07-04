@@ -31,6 +31,8 @@ typedef struct
 	void (*beginMotors)();
 
 	void (*beginSensors)();
+
+	int (*getSensor)(int sensor);
 } Robot;
 
 // Our Global Mouse Variable
