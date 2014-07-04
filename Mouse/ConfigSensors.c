@@ -6,13 +6,27 @@ static void SensorGPIO();
 static void SensorNVIC();
 static void SensorADC();
 
-volatile int Sensors[5];
+
+typedef struct 
+{
+	int data;
+	uint8_t channel;
+}Sensor;
+
+
+volatile Sensor Sensors[5];
 
 void SensorInit()
 {
 	int i;
 	for(i = 0; i < 5; i++)
-		Sensors[i] = 0;
+		Sensors[i].data = 0;
+
+	Sensors[IR_FRONT_LEFT].channel 	= ADC_Channel_10;
+	Sensors[IR_FRONT_RIGHT].channel = ADC_Channel_11;
+	Sensors[IR_SIDE_LEFT].channel 	= ADC_Channel_12;
+	Sensors[IR_SIDE_RIGHT].channel 	= ADC_Channel_13;
+	Sensors[GYRO].channel 			= ADC_Channel_14;
 
 	SensorRCC();
 	SensorGPIO();
@@ -23,7 +37,7 @@ void SensorInit()
 
 int SensorGetValue(int sensor)
 {
-	return Sensors[sensor];
+	return Sensors[sensor].data;
 }
 
 static void SensorTIM()
@@ -134,16 +148,11 @@ void TIM2_IRQHandler()
 	{
 		TIM_ClearITPendingBit(TIM2, TIM_IT_CC2);
 
-		if(counter == 0)
-		{
-			counter++;
-			ADC_RegularChannelConfig(ADC1, ADC_Channel_11, 1, ADC_SampleTime_480Cycles);
-		}
-		else
-		{
+		counter++;
+		if(counter > 4)
 			counter = 0;
-			ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_480Cycles);
-		}
+
+		ADC_RegularChannelConfig(ADC1, Sensors[counter].channel, 1, ADC_SampleTime_480Cycles);
 		
 		ADC_SoftwareStartConv(ADC1);
 	}
@@ -155,7 +164,7 @@ void ADC_IRQHandler()
 	{
 		ADC_ClearITPendingBit(ADC1, ADC_IT_EOC);
 		
-		Sensors[0] = ADC_GetConversionValue(ADC1);
+		Sensors[counter].data = ADC_GetConversionValue(ADC1);
 
 		GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
 	}

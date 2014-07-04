@@ -14,6 +14,9 @@ int main(void)
 	while(1==1)
 	{
 		mouse.sendInteger(mouse.getSensor(0));
+		mouse.sendInteger(mouse.getSensor(1));
+		mouse.sendInteger(mouse.getSensor(2));
+		mouse.sendInteger(mouse.getSensor(3));
 
 		int i;
 		for(i = 0; i < 160000; i++);
