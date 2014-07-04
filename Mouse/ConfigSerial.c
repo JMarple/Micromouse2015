@@ -36,20 +36,19 @@ typedef struct SerialBuffer
 static void startSerialDMA();
 
 // Returns a pointer to a new buffer
-static volatile SerialBuffer* findFreeBuffer();
+static SerialBuffer* findFreeBuffer();
 
 // Holds the data to be sent in no particular order
-volatile SerialBuffer Buffer[BUFFER_SIZE];
+SerialBuffer Buffer[BUFFER_SIZE];
 
 // Tells us the order to send the data, 0 being first
-volatile SerialBuffer* BufferList[BUFFER_SIZE];
-
-// The position in the editingBuffer;
-volatile int BufferPosition;
+SerialBuffer* BufferList[BUFFER_SIZE];
 
 // The buffer currently being added to
-volatile SerialBuffer* editingBuffer;
+SerialBuffer* editingBuffer;
 
+// The position in the editingBuffer;
+int BufferPosition;
 
 // The main entry point for the Serial initiation
 void SerialInitiate(int Baud)
@@ -88,7 +87,7 @@ void SerialSaveRawChar(char num)
 {
 	if(editingBuffer != 0)
 	{
-		editingBuffer->data[editingBuffer->dataLength] = num;
+		editingBuffer->data[editingBuffer->dataLength] = num;		
 		editingBuffer->dataLength++;
 
 		// Checks if the buffer is full
@@ -175,7 +174,7 @@ static void startSerialDMA()
 
 // Finds the next buffer not being used
 //   it looks for dataLength to equal BUFFER_EMPTY
-static volatile SerialBuffer* findFreeBuffer()
+static SerialBuffer* findFreeBuffer()
 {
 	int i;
 	for(i = 0; i < BUFFER_SIZE; i++)
@@ -192,7 +191,7 @@ static volatile SerialBuffer* findFreeBuffer()
 }
 
 // DMA Completion Interrupt
-// This is called when the DMA has completed transmitting it's current message 
+// This is called when the DMA has completed transmitting it's current message
 void DMA2_Stream7_IRQHandler(void)
 {
 	// DMA 2 Stream 7 Completion 
@@ -240,6 +239,3 @@ void USART1_IRQHandler(void)
 		//t = USART1->DR;
 	}
 }
-
-
-

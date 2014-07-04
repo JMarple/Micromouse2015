@@ -56,4 +56,5 @@ void SerialSaveRawInteger(int data);
 // Forces the buffer to send it's content
 void SerialForceBuffer();
 
+
 #endif

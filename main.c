@@ -7,22 +7,9 @@ int main(void)
 
 	mouse.beginSensors();
 	mouse.beginSerial(9600);
-
-	//int num = 256;
-
-	//mouse.sendInteger(num);
-	//mouse.sendString("a");
-	//mouse.sendNum(0xFFFF);
-	//mouse.sendChar('a');
-
 	
-
-  	ADC_SoftwareStartConv(ADC1);
-  	while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC));
-  	
-  	int num = ADC_GetConversionValue(ADC1);
-  	mouse.sendInteger(num);
-	mouse.forceBuffer();	
+	mouse.sendChar('a');
+	mouse.forceBuffer();
 
 	while(1==1)
 	{
@@ -32,3 +19,4 @@ int main(void)
 
 	return 0;
 }
+

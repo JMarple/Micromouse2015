@@ -81,7 +81,7 @@ static void SensorADC()
 
 	ADC_Struct.ADC_DataAlign = ADC_DataAlign_Right;
 	ADC_Struct.ADC_Resolution = ADC_Resolution_12b;
-	ADC_Struct.ADC_ContinuousConvMode = ENABLE;
+	ADC_Struct.ADC_ContinuousConvMode = DISABLE;
 	ADC_Struct.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;
 	ADC_Struct.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
 	ADC_Struct.ADC_NbrOfConversion = 1;
@@ -101,6 +101,11 @@ static void SensorNVIC()
 	NVIC_Struct.NVIC_IRQChannelSubPriority = 1;
 	NVIC_Struct.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_Struct);
+
+	NVIC_Struct.NVIC_IRQChannel = ADC_IRQn;
+	NVIC_Init(&NVIC_Struct);
+
+	ADC_ITConfig(ADC1, ADC_IT_EOC, ENABLE);
 }
 
 volatile int counter = 100;
@@ -111,6 +116,8 @@ void TIM2_IRQHandler()
 	{
 		TIM_ClearITPendingBit(TIM2, TIM_IT_CC1);
 
+
+
 		/*TIM_PrescalerConfig(TIM2, counter, TIM_PSCReloadMode_Immediate);
 
 		counter++;
@@ -118,11 +125,44 @@ void TIM2_IRQHandler()
 			counter = 100;*/
 
 		//GPIO_ToggleBits(GPIOA, GPIO_Pin_8);
-		GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);	
+		GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);	
 	}
 	else if(TIM_GetITStatus(TIM2, TIM_IT_CC2) != RESET)
 	{
 		TIM_ClearITPendingBit(TIM2, TIM_IT_CC2);
-		GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_SET);
+
+		ADC_SoftwareStartConv(ADC1);
 	}
 }
+
+void ADC_IRQHandler()
+{
+	ADC_ClearITPendingBit(ADC1, ADC_IT_EOC);
+	GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
+
+	//mouse.sendString("ADC");
+	//int num = ADC_GetConversionValue(ADC1);
+
+
+	//mouse.forceBuffer();
+
+
+	//mouse.forceBuffer();
+	//mouse.forceBuffer();
+
+	/*if(countUp == 0)
+	{
+		mouse.sendString("ADC");
+		//mouse.forceBuffer();
+		countUp = 1;
+		ADC_SoftwareStartConv(ADC1); 
+	}
+	else
+	{
+		// What the heck is wrong with forceBuffer now..
+		mouse.forceBuffer();
+	}*/
+
+}
+
+
