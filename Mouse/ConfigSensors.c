@@ -79,34 +79,34 @@ static void SensorTIM()
 	// Initate timer
 	TIM_Struct.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_Struct.TIM_RepetitionCounter = 0;
-	TIM_TimeBaseInit(TIM2, &TIM_Struct);
+	TIM_TimeBaseInit(TIM4, &TIM_Struct);
 
 	// Have an interrupt thrown when the counter = 0us (the start)
 	TIM_OC.TIM_OCMode = TIM_OCMode_Inactive;
 	TIM_OC.TIM_OutputState = TIM_OutputState_Enable;
 	TIM_OC.TIM_OCPolarity = TIM_OCPolarity_High;
 	TIM_OC.TIM_Pulse = 0;
-	TIM_OC1Init(TIM2, &TIM_OC);	
-	TIM_OC1PreloadConfig(TIM2, TIM_OCPreload_Disable);
+	TIM_OC1Init(TIM4, &TIM_OC);	
+	TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Disable);
 
 	// Have an interrupt thrown when the counter = 80us
 	TIM_OC.TIM_OutputState = TIM_OutputState_Enable;
 	TIM_OC.TIM_Pulse = 80;
-	TIM_OC2Init(TIM2, &TIM_OC);
-	TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Disable);
+	TIM_OC2Init(TIM4, &TIM_OC);
+	TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Disable);
 
 	// Turn on Interrupts
-	TIM_ITConfig(TIM2, TIM_IT_CC1 | TIM_IT_CC2, ENABLE);
+	TIM_ITConfig(TIM4, TIM_IT_CC1 | TIM_IT_CC2, ENABLE);
 
 	// Start Timer
-	TIM_Cmd(TIM2, ENABLE);
+	TIM_Cmd(TIM4, ENABLE);
 }
 
 static void SensorRCC()
 {
 	// Turn on perhiperhal clocks
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 }
@@ -152,10 +152,10 @@ static void SensorADC()
 
 static void SensorNVIC()
 {
-	// Turn on the TIM2 and ADC Interrupts
-	// This allows us to use TIM2_IRQHandler and ADC_IRQHandler
+	// Turn on the TIM4 and ADC Interrupts
+	// This allows us to use TIM4_IRQHandler and ADC_IRQHandler
 	NVIC_InitTypeDef NVIC_Struct;
-	NVIC_Struct.NVIC_IRQChannel = TIM2_IRQn;
+	NVIC_Struct.NVIC_IRQChannel = TIM4_IRQn;
 	NVIC_Struct.NVIC_IRQChannelPreemptionPriority = 0;
 	NVIC_Struct.NVIC_IRQChannelSubPriority = 1;
 	NVIC_Struct.NVIC_IRQChannelCmd = ENABLE;
@@ -169,27 +169,27 @@ static void SensorNVIC()
 
 volatile int counter = 0;
 
-// TIM2_IRQHandler()
+// TIM4_IRQHandler()
 // This is an interrupt that handles all timer events
 // This timer is setup to turn on a Sensor pin on CC1, 
 //   then turn on an ADC conversion on CC2.  
 //   The End-Of-Conversion interrupt will turn off the 
 //   sensor pin
-void TIM2_IRQHandler()
+void TIM4_IRQHandler()
 {
 	// If the timer 
-	if(TIM_GetITStatus(TIM2, TIM_IT_CC1) != RESET)
+	if(TIM_GetITStatus(TIM4, TIM_IT_CC1) != RESET)
 	{
-		TIM_ClearITPendingBit(TIM2, TIM_IT_CC1);
+		TIM_ClearITPendingBit(TIM4, TIM_IT_CC1);
 
 		// Write the Sensor pin
 		GPIO_WriteBit(Sensors[counter].port, Sensors[counter].pin, Bit_SET);	
 	}
 
 	// CC2 : After 80us pass for the sensor to turn on correctly, do a ADC conversion
-	else if(TIM_GetITStatus(TIM2, TIM_IT_CC2) != RESET)
+	else if(TIM_GetITStatus(TIM4, TIM_IT_CC2) != RESET)
 	{
-		TIM_ClearITPendingBit(TIM2, TIM_IT_CC2);
+		TIM_ClearITPendingBit(TIM4, TIM_IT_CC2);
 
 		// Determine which pin to take the ADC conversion from
 		ADC_RegularChannelConfig(ADC1, Sensors[counter].channel, 1, ADC_SampleTime_480Cycles);
