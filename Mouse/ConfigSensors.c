@@ -32,7 +32,7 @@ void SensorInit()
 
 	Sensors[IR_FRONT_RIGHT].channel = ADC_Channel_11;
 	Sensors[IR_FRONT_RIGHT].port = GPIOA;
-	Sensors[IR_FRONT_RIGHT].pin = GPIO_Pin_1;
+	Sensors[IR_FRONT_RIGHT].pin = GPIO_Pin_8;
 
 	Sensors[IR_SIDE_LEFT].channel = ADC_Channel_12;
 	Sensors[IR_SIDE_LEFT].port = GPIOA;
@@ -40,7 +40,7 @@ void SensorInit()
 
 	Sensors[IR_SIDE_RIGHT].channel = ADC_Channel_13;
 	Sensors[IR_SIDE_RIGHT].port = GPIOA;
-	Sensors[IR_SIDE_RIGHT].pin = GPIO_Pin_1;
+	Sensors[IR_SIDE_RIGHT].pin = GPIO_Pin_8;
 
 	Sensors[GYRO].channel = ADC_Channel_14;
 	Sensors[GYRO].port = GPIOA;
@@ -118,11 +118,11 @@ static void SensorGPIO()
 	// Sensor Emitter Pins
 	GPIO_Struct.GPIO_OType = GPIO_OType_PP;
 	GPIO_Struct.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Struct.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_8;
+	GPIO_Struct.GPIO_Pin = GPIO_Pin_8;
 	GPIO_Struct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Struct.GPIO_PuPd = GPIO_PuPd_DOWN;
 	GPIO_Init(GPIOA, &GPIO_Struct);
-	GPIO_WriteBit(GPIOA, GPIO_Pin_1 | GPIO_Pin_8, Bit_RESET);
+	GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
 
 	// Sensor Reciever pins
 	GPIO_Struct.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4;

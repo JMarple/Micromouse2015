@@ -18,6 +18,11 @@ void InitRobot()
 	mouse.sendInteger	= &SerialSaveRawInteger;
 	mouse.forceBuffer 	= &SerialForceBuffer;
 
+	mouse.getLeftEncoder 	= &MotorEncoder1;
+	mouse.getRightEncoder	= &MotorEncoder2;
+	mouse.resetLeftEncoder	= &MotorEncoder1Reset;
+	mouse.resetRightEncoder = &MotorEncoder2Reset;
+	
 	mouse.getSensor		= &SensorGetValue;	
 }
 

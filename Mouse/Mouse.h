@@ -33,6 +33,16 @@ typedef struct
 	// Sets up the PWM modules for the motors
 	void (*beginMotors)();
 
+	// get__Encoder(...)
+	// Gets the current encoder value 
+	int (*getLeftEncoder)();
+	int (*getRightEncoder)();
+
+	// reset__Encoder(...)
+	// Resets the current encoder
+	void (*resetLeftEncoder)();
+	void (*resetRightEncoder)();
+
 	// beginSensors(...)
 	// Turns on the sensor update loop
 	void (*beginSensors)();
@@ -40,7 +50,7 @@ typedef struct
 	// getSensor(...)
 	// Gets the last recorded value of each sensor
 	int (*getSensor)(int sensor);
-	
+
 } Robot;
 
 // Our Global Mouse Variable
