@@ -27,6 +27,11 @@ void InitMotors();
 int MotorEncoder1();
 int MotorEncoder2();
 
+// SetMotor_(...)
+// Sets the PWM of the motor, ranges from 0 to 1000
+void SetMotor1(int value);
+void SetMotor2(int value);
+
 // MotorEncoder_Reset(...)
 // Reset the encoder timer to a default value
 void MotorEncoder1Reset();

@@ -27,24 +27,24 @@ void SensorInit()
 
 	// Set all Defaults for the sensor
 	Sensors[IR_FRONT_LEFT].channel = ADC_Channel_10;
-	Sensors[IR_FRONT_LEFT].port = GPIOA;
-	Sensors[IR_FRONT_LEFT].pin = GPIO_Pin_8;
+	Sensors[IR_FRONT_LEFT].port = GPIOB;
+	Sensors[IR_FRONT_LEFT].pin = GPIO_Pin_7;
 
-	Sensors[IR_FRONT_RIGHT].channel = ADC_Channel_11;
-	Sensors[IR_FRONT_RIGHT].port = GPIOA;
-	Sensors[IR_FRONT_RIGHT].pin = GPIO_Pin_8;
+	Sensors[IR_FRONT_RIGHT].channel = ADC_Channel_12;
+	Sensors[IR_FRONT_RIGHT].port = GPIOB;
+	Sensors[IR_FRONT_RIGHT].pin = GPIO_Pin_6;
 
-	Sensors[IR_SIDE_LEFT].channel = ADC_Channel_12;
-	Sensors[IR_SIDE_LEFT].port = GPIOA;
+	Sensors[IR_SIDE_LEFT].channel = ADC_Channel_11;
+	Sensors[IR_SIDE_LEFT].port = GPIOB;
 	Sensors[IR_SIDE_LEFT].pin = GPIO_Pin_8;
 
 	Sensors[IR_SIDE_RIGHT].channel = ADC_Channel_13;
-	Sensors[IR_SIDE_RIGHT].port = GPIOA;
-	Sensors[IR_SIDE_RIGHT].pin = GPIO_Pin_8;
+	Sensors[IR_SIDE_RIGHT].port = GPIOB;
+	Sensors[IR_SIDE_RIGHT].pin = GPIO_Pin_9;
 
-	Sensors[GYRO].channel = ADC_Channel_14;
+	Sensors[GYRO].channel = ADC_Channel_2;
 	Sensors[GYRO].port = GPIOA;
-	Sensors[GYRO].pin = GPIO_Pin_8;
+	Sensors[GYRO].pin = GPIO_Pin_2;
 
 	SensorRCC();
 	SensorGPIO();
@@ -106,9 +106,12 @@ static void SensorRCC()
 {
 	// Turn on perhiperhal clocks
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+
 }
 
 static void SensorGPIO()
@@ -118,17 +121,22 @@ static void SensorGPIO()
 	// Sensor Emitter Pins
 	GPIO_Struct.GPIO_OType = GPIO_OType_PP;
 	GPIO_Struct.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Struct.GPIO_Pin = GPIO_Pin_8;
+	GPIO_Struct.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9;
 	GPIO_Struct.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_Struct.GPIO_PuPd = GPIO_PuPd_DOWN;
-	GPIO_Init(GPIOA, &GPIO_Struct);
-	GPIO_WriteBit(GPIOA, GPIO_Pin_8, Bit_RESET);
+	GPIO_Init(GPIOB, &GPIO_Struct);
+	GPIO_WriteBit(GPIOB, GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9, Bit_RESET);
 
 	// Sensor Reciever pins
 	GPIO_Struct.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4;
 	GPIO_Struct.GPIO_Mode = GPIO_Mode_AN;
 	GPIO_Struct.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOC, &GPIO_Struct);
+
+	GPIO_Struct.GPIO_Pin = GPIO_Pin_2;
+	GPIO_Struct.GPIO_Mode = GPIO_Mode_AN;
+	GPIO_Struct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOA, &GPIO_Struct);
 }
 
 static void SensorADC()
@@ -192,12 +200,17 @@ void TIM4_IRQHandler()
 		TIM_ClearITPendingBit(TIM4, TIM_IT_CC2);
 
 		// Determine which pin to take the ADC conversion from
-		ADC_RegularChannelConfig(ADC1, Sensors[counter].channel, 1, ADC_SampleTime_480Cycles);
+		ADC_RegularChannelConfig(ADC1, Sensors[counter].channel, 1, ADC_SampleTime_28Cycles);
 		
 		// Start the ADC
 		ADC_SoftwareStartConv(ADC1);
 	}
 }
+
+#define ADC_Oversampling 32
+
+volatile int ADC_Counter = 0;
+volatile int ADC_PrevValues[ADC_Oversampling+1];
 
 // ADC_IRQHandler
 // This is an interrupt that handles all ADC events
@@ -209,16 +222,54 @@ void ADC_IRQHandler()
 	{
 		ADC_ClearITPendingBit(ADC1, ADC_IT_EOC);
 
-		// Turn off the sensor pin
-		GPIO_WriteBit(Sensors[counter].port, Sensors[counter].pin, Bit_RESET);
-		
-		// Save the ADC conversion value
-		Sensors[counter].data = ADC_GetConversionValue(ADC1);		
+		if(ADC_Counter < ADC_Oversampling)
+		{
+			ADC_PrevValues[ADC_Counter] = ADC_GetConversionValue(ADC1);
+			ADC_Counter++;
+			ADC_SoftwareStartConv(ADC1);
+		}
+		else
+		{
+			// Turn off the sensor pin
+			GPIO_WriteBit(Sensors[counter].port, Sensors[counter].pin, Bit_RESET);
+			ADC_PrevValues[ADC_Oversampling] = ADC_GetConversionValue(ADC1);
 
-		// Change which sensor to use for the next conversion
-		counter++;
-		if(counter > 4)
-			counter = 0;
+			int sum = 0;
+			int i;
+			for(i = 0; i < ADC_Oversampling+1; i++)
+				sum += ADC_PrevValues[i];
+
+			Sensors[counter].data = (sum << 2) / (ADC_Oversampling+1);
+			// Save the ADC conversion value (average)
+			//Sensors[counter].data = (int)(( sum + ADC_GetConversionValue(ADC1) ) / (ADC_Oversampling + 1) );		
+
+			// Bubble sort, cause simple and for testing purposes
+			/*for(i = 0; i < ADC_Oversampling + 1; i++)
+			{
+				int j;
+				for(j = 0; j < ADC_Oversampling; j++)
+				{
+					if(ADC_PrevValues[j] > ADC_PrevValues[j+1])
+					{
+						int temp = ADC_PrevValues[j+1];
+						ADC_PrevValues[j+1] = ADC_PrevValues[j];
+						ADC_PrevValues[j] = temp;
+					}
+				}
+			}
+
+			int median = (int)((ADC_Oversampling+1)/2);
+			Sensors[counter].data = ADC_PrevValues[median];*/
+			//int ADC_CurValue = ADC_GetConversionValue(ADC1);
+
+
+			// Change which sensor to use for the next conversion
+			counter++;
+			if(counter > 4)
+				counter = 0;
+
+			ADC_Counter = 0;
+		}
 	}
 }
 

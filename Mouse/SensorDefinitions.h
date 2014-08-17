@@ -16,4 +16,11 @@
 #define IR_SIDE_RIGHT		0x03
 #define GYRO				0x04
 
+#define FRONT_CENTER_LED	0x01
+#define FRONT_RIGHT_LED		0x02
+#define FRONT_LEFT_LED		0x04
+#define BACK_LEFT_LED		0x08
+#define BACK_CENTER_LED		0x10
+#define BACK_RIGHT_LED		0x20
+
 #endif

@@ -43,6 +43,11 @@ typedef struct
 	void (*resetLeftEncoder)();
 	void (*resetRightEncoder)();
 
+	// set__Motor(...)
+	// Sets the PWM value of each motor
+	void (*setLeftMotor)(int value);
+	void (*setRightMotor)(int value);
+
 	// beginSensors(...)
 	// Turns on the sensor update loop
 	void (*beginSensors)();
@@ -50,6 +55,17 @@ typedef struct
 	// getSensor(...)
 	// Gets the last recorded value of each sensor
 	int (*getSensor)(int sensor);
+
+	// ledOn(...)
+	// Turns on/off one of the LED's located onboard
+	void (*ledOn)(int led);
+	void (*ledOff)(int led);
+
+	// isButtonPushed(...)
+	// Returns 1 if the micromouse button has been pushed
+	int (*isButtonPushed)();
+
+	void (*beginMisc)();
 
 } Robot;
 

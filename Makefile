@@ -1,6 +1,6 @@
 # put your *.o targets here, make should handle the rest!
 
-SRCS = main.c Mouse.c ConfigMotors.c ConfigSensors.c
+SRCS = main.c Mouse.c ConfigMotors.c ConfigSensors.c ConfigMisc.c
 SRCS += ConfigSerial.c ConfigSerialPeripherals.c system_stm32f4xx.c
 
 # all the files will be generated with this name (main.elf, main.bin, main.hex, etc)
